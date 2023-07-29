@@ -1,5 +1,3 @@
-export DEBUG
-
 server: kill
 	node "`pwd`/server.js" &
 

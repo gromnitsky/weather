@@ -3,20 +3,12 @@ import fs from 'fs'
 import path from 'path'
 import locations from './locations/Locations.js'
 
-function err(res, msg) {
-    res.statusCode = 400
-    res.statusMessage = msg
-    res.end()
-}
-
-function usage(res) { err(res, 'usage: ?city=query ?l=location or /stat') }
-
 function cities(res, q) {
     let r = []
     q = (q || '').trim().toLowerCase(); if (q) {
         r = locations.filter( v => v[0].toLowerCase().includes(q))
             .slice(0, 10).map( v => v[0])
-        res.setHeader("Expires", new Date(Date.now() + 30*1000).toUTCString())
+        expires_in(res, 60)
     }
     res.end(JSON.stringify(r))
 }
@@ -54,10 +46,21 @@ let server = http.createServer( (req, res) => {
 })
 
 if (import.meta.url.endsWith(process.argv[1]))
-    server.listen(process.env.PORT || 3000)
+    server.listen(process.env.PORT || 8080)
 
+function err(res, msg) {
+    res.statusCode = 400
+    res.statusMessage = msg
+    res.end()
+}
 
-let public_root = fs.realpathSync(process.cwd())
+function usage(res) { err(res, 'usage: ?city=query ?l=location or /stat') }
+
+function expires_in(res, sec) {
+    res.setHeader("Expires", new Date(Date.now() + sec*1000).toUTCString())
+}
+
+let public_root = fs.realpathSync(path.dirname(process.argv[1]))
 
 function serve_static(req, res, file) {
     if (/^\/+$/.test(file)) file = "index.html"
@@ -74,6 +77,7 @@ function serve_static(req, res, file) {
             '.gif': 'image/gif',
             '.js': 'application/javascript'
         }[path.extname(name)] || 'application/octet-stream')
+        expires_in(res, 60*60)
 
         let stream = fs.createReadStream(name)
         stream.on('error', err => {
