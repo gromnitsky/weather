@@ -1,4 +1,4 @@
-function cities_fetch(query) {
+function cities(query) {
     return fetch('?city='+query).then( v => {
         if (!v.ok) throw new Error(v.statusText)
         return v.json()
@@ -14,28 +14,28 @@ function debounce(fn, ms = 0) {
 }
 
 async function completion(query) {
-    return (await cities_fetch(query)).map( v => {
+    return (await cities(query)).map( v => {
         return `<option value="${v}">` // FIXME
     }).join`\n`
 }
 
-let cities = document.querySelector("#cities")
-let city = document.querySelector("#city")
+let city = document.querySelector("#form input")
+let datalist = document.querySelector("#form datalist")
 let weather = document.querySelector("#weather")
 
 city.addEventListener("input", debounce(async function(evt) {
     console.log(evt.inputType)
     if (evt.inputType === "insertReplacementText") { // firefox
         this.dispatchEvent(new Event('change'))
-        cities.innerHTML = ''
+        datalist.innerHTML = ''
         return
-    } else if (! evt.inputType?.match(/^(insertText|delete|insertFromPaste)/)) {
-        cities.innerHTML = ''
+    } else if (!evt.inputType?.match(/^(insertText|delete|insertFromPaste)/)) {
+        datalist.innerHTML = ''
         return
     }
 
     try {
-        cities.innerHTML = await completion(this.value)
+        datalist.innerHTML = await completion(this.value)
     } catch (e) {
         evt = new Event('my-error')
         evt.error = e
