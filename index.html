@@ -6,7 +6,8 @@
   @media (min-width: 601px) { body { width: 600px; margin: 8px auto; } }
   #form { display: flex; gap: 10px; align-items: flex-start; }
   #form > * { align-self: center; }
-  #form input { width: 100%; font-family: monospace; font-size: 1rem; };
+  #form input { width: 100%; font-family: monospace; font-size: 1rem; }
+  table { width: 100%; }
 </style>
 
 <h1>Weather</h1>
@@ -15,6 +16,6 @@
   <input type="search" list="cities">
   <datalist id="cities"></datalist>
 </p>
-<p id="weather"></p>
+<p id="result"></p>
 
 <script type="module" src="web.js"></script>

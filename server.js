@@ -14,12 +14,22 @@ function cities(res, q) {
 }
 
 function weather(res, location) {
-    let coords = locations.find( v => v[0] === location)?.[1]
-    if (!coords) {
+    let co = locations.find( v => v[0] === location)?.[1]
+    if (!co) {
         err(res, 'invalid location')
         return
     }
-    res.end(JSON.stringify(coords))
+    fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( v => {
+        if (!v.ok) throw new Error(v.statusText)
+        return v.json()
+    }).then( v => {
+        let r = v?.properties?.timeseries?.[0]
+        expires_in(res, 120)
+        res.end(JSON.stringify({
+            time: r?.time,
+            details: r?.data?.instant?.details
+        }))
+    }).catch( e => err(res, `MET Norway: ${e.message}`, 500))
 }
 
 let server = http.createServer( (req, res) => {
@@ -35,21 +45,19 @@ let server = http.createServer( (req, res) => {
     let city = url.searchParams.get('city')
     let location = url.searchParams.get('l')
 
-    if (city != null) {
+    if (url.pathname === '/api' && city != null) {
         cities(res, city)
-    } else if (location != null) {
+    } else if (url.pathname === '/api' && location != null) {
         weather(res, location)
-    } else if (req.url === '/stat') {
-        res.end(locations.length.toString())
     } else
-        serve_static(req, res, req.url)
+        serve_static(res, url.pathname)
 })
 
 if (import.meta.url.endsWith(process.argv[1]))
     server.listen(process.env.PORT || 8080)
 
-function err(res, msg) {
-    res.statusCode = 400
+function err(res, msg, code = 400) {
+    res.statusCode = code
     res.statusMessage = msg
     res.end()
 }
@@ -62,7 +70,7 @@ function expires_in(res, sec) {
 
 let public_root = fs.realpathSync(path.dirname(process.argv[1]))
 
-function serve_static(req, res, file) {
+function serve_static(res, file) {
     if (/^\/+$/.test(file)) file = "index.html"
     let name = path.join(public_root, path.normalize(file))
     fs.stat(name, (err, stats) => {
@@ -77,7 +85,6 @@ function serve_static(req, res, file) {
             '.gif': 'image/gif',
             '.js': 'application/javascript'
         }[path.extname(name)] || 'application/octet-stream')
-        expires_in(res, 60*60)
 
         let stream = fs.createReadStream(name)
         stream.on('error', err => {
