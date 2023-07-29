@@ -1,19 +1,8 @@
-function cities_fetch(url = "world-cities.csv") {
-    if (cities_fetch.R) return cities_fetch.R
-
-    cities_fetch.R = fetch(url).then( v => {
+function cities_fetch(query) {
+    return fetch('?city='+query).then( v => {
         if (!v.ok) throw new Error(v.statusText)
-        return v.text()
-    }).then( text => {
-            return text.split("\n").map( (line, idx) => {
-                if (idx === 0) return
-                let [city, country, region] = line.split(",")
-                if (!city) return
-                return [city, country, region].join`, `
-            }).filter(Boolean)
+        return v.json()
     })
-
-    return cities_fetch.R
 }
 
 function debounce(fn, ms = 0) {
@@ -24,19 +13,17 @@ function debounce(fn, ms = 0) {
     }
 }
 
-async function completion(query, limit = 10) {
-    let cities = await cities_fetch()
-    query = query.toLowerCase()
-    return cities.filter( v => v.toLowerCase().includes(query)).map( v => {
+async function completion(query) {
+    return (await cities_fetch(query)).map( v => {
         return `<option value="${v}">` // FIXME
-    }).slice(0, limit).join`\n`
+    }).join`\n`
 }
 
 let cities = document.querySelector("#cities")
 let city = document.querySelector("#city")
 let weather = document.querySelector("#weather")
 
-city.addEventListener("input", async function(evt) {
+city.addEventListener("input", debounce(async function(evt) {
     console.log(evt.inputType)
     if (evt.inputType === "insertReplacementText") { // firefox
         this.dispatchEvent(new Event('change'))
@@ -54,7 +41,7 @@ city.addEventListener("input", async function(evt) {
         evt.error = e
         this.dispatchEvent(evt)
     }
-})
+}, 250))
 
 let prev_change_value
 city.addEventListener("change", function() {

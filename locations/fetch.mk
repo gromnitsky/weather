@@ -2,7 +2,10 @@
 
 s := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-$(s)/Locations.js: $(s)/Locations.xml
+$(s)/Locations.js: $(s)/Locations.js-tmp
+	mv $< $@
+
+$(s)/%.js-tmp: $(s)/%.xml
 	ruby $(s)/cities.rb $< > $@
 	[ `stat -c %s $@` -gt 250000 ]
 

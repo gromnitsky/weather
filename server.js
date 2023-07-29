@@ -1,20 +1,38 @@
 import http from 'http'
+import fs from 'fs'
+import path from 'path'
 import locations from './locations/Locations.js'
 
-function usage(res) {
+function err(res, msg) {
     res.statusCode = 400
-    res.statusMessage = 'usage: ?city=query ?l=location or /'
+    res.statusMessage = msg
     res.end()
 }
 
+function usage(res) { err(res, 'usage: ?city=query ?l=location or /stat') }
+
 function cities(res, q) {
-    q = q.trim().toLowerCase()
-    let r = locations.filter( v => v[0].toLowerCase().includes(q))
-        .slice(0, 10).map( v => v[0])
+    let r = []
+    q = (q || '').trim().toLowerCase(); if (q) {
+        r = locations.filter( v => v[0].toLowerCase().includes(q))
+            .slice(0, 10).map( v => v[0])
+        res.setHeader("Expires", new Date(Date.now() + 30*1000).toUTCString())
+    }
     res.end(JSON.stringify(r))
 }
 
+function weather(res, location) {
+    let coords = locations.find( v => v[0] === location)?.[1]
+    if (!coords) {
+        err(res, 'invalid location')
+        return
+    }
+    res.end(JSON.stringify(coords))
+}
+
 let server = http.createServer( (req, res) => {
+    if (req.method !== 'GET') { usage(res); return }
+
     let url; try {
         url = new URL(req.url, `http://${req.headers.host}`)
     } catch (_) {
@@ -22,18 +40,47 @@ let server = http.createServer( (req, res) => {
         return
     }
 
-    if (process.env.DEBUG) res.setHeader('Access-Control-Allow-Origin', '*')
-
     let city = url.searchParams.get('city')
     let location = url.searchParams.get('l')
 
-    if (city) {
+    if (city != null) {
         cities(res, city)
-    } else if (req.url === '/') {
+    } else if (location != null) {
+        weather(res, location)
+    } else if (req.url === '/stat') {
         res.end(locations.length.toString())
     } else
-        usage(res)
+        serve_static(req, res, req.url)
 })
 
 if (import.meta.url.endsWith(process.argv[1]))
     server.listen(process.env.PORT || 3000)
+
+
+let public_root = fs.realpathSync(process.cwd())
+
+function serve_static(req, res, file) {
+    if (/^\/+$/.test(file)) file = "index.html"
+    let name = path.join(public_root, path.normalize(file))
+    fs.stat(name, (err, stats) => {
+        if (err) {
+            res.statusCode = 404
+            res.end()
+            return
+        }
+        res.setHeader('Content-Length', stats.size)
+        res.setHeader('Content-Type', {
+            '.html': 'text/html',
+            '.gif': 'image/gif',
+            '.js': 'application/javascript'
+        }[path.extname(name)] || 'application/octet-stream')
+
+        let stream = fs.createReadStream(name)
+        stream.on('error', err => {
+            res.statusCode = 500
+            console.error(err.message)
+            res.end()
+        })
+        stream.pipe(res)
+    })
+}
