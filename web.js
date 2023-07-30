@@ -1,12 +1,5 @@
-function cities(query) {
-    return fetch('/api?city='+query).then( v => {
-        if (!v.ok) throw new Error(v.statusText)
-        return v.json()
-    })
-}
-
-function weather(location) {
-    return fetch('/api?l='+location).then( v => {
+function fetch_json(url) {
+    return fetch(url).then( v => {
         if (!v.ok) throw new Error(v.statusText)
         return v.json()
     })
@@ -21,7 +14,7 @@ function debounce(fn, ms = 0) {
 }
 
 async function completion(query) {
-    return (await cities(query)).map( v => {
+    return (await fetch_json('/api?city='+query)).map( v => {
         return `<option value="${v}">` // FIXME
     }).join`\n`
 }
@@ -57,7 +50,7 @@ city.addEventListener("change", function() {
 
     result.innerText = "Loading..."
     this.disabled = true
-    weather(this.value).then( v => {
+    fetch_json('/api?l='+this.value).then( v => {
         let r = [`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
         v = v.details
         r.push(`<tr><td>T, °C</td><td>${v.air_temperature}</td></tr>`)
