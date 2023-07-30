@@ -8,7 +8,7 @@ function cities(res, q) {
     q = (q || '').trim().toLowerCase(); if (q) {
         r = locations.filter( v => v[0].toLowerCase().includes(q))
             .slice(0, 10).map( v => v[0])
-        expires_in(res, 120)
+        res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
     }
     res.end(JSON.stringify(r))
 }
@@ -17,12 +17,12 @@ function weather(res, location) {
     let co = locations.find( v => v[0] === location)?.[1]
     if (!co) return err(res, 'invalid location')
 
-    fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( v => {
+    fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( async v => {
         if (!v.ok) throw new Error(v.statusText)
-        return v.json()
+        return { expires: v.headers.get('expires'), json: await v.json() }
     }).then( v => {
-        let r = v?.properties?.timeseries?.[0]
-        expires_in(res, 120)
+        let r = v.json?.properties?.timeseries?.[0]
+        if (v.expires) res.setHeader("Expires", v.expires)
         res.end(JSON.stringify({
             time: r?.time,
             details: r?.data?.instant?.details,
@@ -62,10 +62,6 @@ function err(res, msg, code = 400) {
 }
 
 function usage(res) { err(res, 'Usage: /api?city=query /api?l=location') }
-
-function expires_in(res, sec) {
-    res.setHeader("Expires", new Date(Date.now() + sec*1000).toUTCString())
-}
 
 let public_root = fs.realpathSync(path.dirname(process.argv[1]))
 
