@@ -8,17 +8,15 @@ function cities(res, q) {
     q = (q || '').trim().toLowerCase(); if (q) {
         r = locations.filter( v => v[0].toLowerCase().includes(q))
             .slice(0, 10).map( v => v[0])
-        expires_in(res, 60)
+        expires_in(res, 120)
     }
     res.end(JSON.stringify(r))
 }
 
 function weather(res, location) {
     let co = locations.find( v => v[0] === location)?.[1]
-    if (!co) {
-        err(res, 'invalid location')
-        return
-    }
+    if (!co) return err(res, 'invalid location')
+
     fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( v => {
         if (!v.ok) throw new Error(v.statusText)
         return v.json()
@@ -33,22 +31,22 @@ function weather(res, location) {
 }
 
 let server = http.createServer( (req, res) => {
-    if (req.method !== 'GET') { usage(res); return }
-
     let url; try {
         url = new URL(req.url, `http://${req.headers.host}`)
     } catch (_) {
-        usage(res)
-        return
+        return err(res, 'Usage: /api?city=query /api?l=location')
     }
 
-    let city = url.searchParams.get('city')
-    let location = url.searchParams.get('l')
+    if (req.method === 'GET' && url.pathname === '/api') {
+        let city = url.searchParams.get('city')
+        let location = url.searchParams.get('l')
 
-    if (url.pathname === '/api' && city != null) {
-        cities(res, city)
-    } else if (url.pathname === '/api' && location != null) {
-        weather(res, location)
+        if (city != null) {
+            cities(res, city)
+        } else if (location != null) {
+            weather(res, location)
+        }
+
     } else
         serve_static(res, url.pathname)
 })
@@ -62,8 +60,6 @@ function err(res, msg, code = 400) {
     res.end()
 }
 
-function usage(res) { err(res, 'usage: ?city=query ?l=location or /stat') }
-
 function expires_in(res, sec) {
     res.setHeader("Expires", new Date(Date.now() + sec*1000).toUTCString())
 }
@@ -76,13 +72,11 @@ function serve_static(res, file) {
     fs.stat(name, (err, stats) => {
         if (err) {
             res.statusCode = 404
-            res.end()
-            return
+            return res.end()
         }
         res.setHeader('Content-Length', stats.size)
         res.setHeader('Content-Type', {
             '.html': 'text/html',
-            '.gif': 'image/gif',
             '.js': 'application/javascript'
         }[path.extname(name)] || 'application/octet-stream')
 
