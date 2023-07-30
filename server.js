@@ -35,7 +35,7 @@ let server = http.createServer( (req, res) => {
     let url; try {
         url = new URL(req.url, `http://${req.headers.host}`)
     } catch (_) {
-        return err(res, 'Usage: /api?city=query /api?l=location')
+        return usage(res)
     }
 
     if (req.method === 'GET' && url.pathname === '/api') {
@@ -46,8 +46,8 @@ let server = http.createServer( (req, res) => {
             cities(res, city)
         } else if (location != null) {
             weather(res, location)
-        }
-
+        } else
+            usage(res)
     } else
         serve_static(res, url.pathname)
 })
@@ -60,6 +60,8 @@ function err(res, msg, code = 400) {
     res.statusMessage = msg
     res.end()
 }
+
+function usage(res) { err(res, 'Usage: /api?city=query /api?l=location') }
 
 function expires_in(res, sec) {
     res.setHeader("Expires", new Date(Date.now() + sec*1000).toUTCString())
