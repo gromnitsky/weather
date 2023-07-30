@@ -25,7 +25,8 @@ function weather(res, location) {
         expires_in(res, 120)
         res.end(JSON.stringify({
             time: r?.time,
-            details: r?.data?.instant?.details
+            details: r?.data?.instant?.details,
+            co
         }))
     }).catch( e => err(res, `MET Norway: ${e.message}`, 500))
 }

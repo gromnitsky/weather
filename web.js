@@ -60,13 +60,14 @@ city.addEventListener("change", function() {
     this.disabled = true
     fetch_json('/api?l='+this.value).then( v => {
         let r = [html`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
-        v = v.details
-        r.push(html`<tr><td>T, °C</td><td>${v.air_temperature}</td></tr>`)
-        r.push(html`<tr><td>Humidity, %</td><td>${v.relative_humidity}</td></tr>`)
-        r.push(html`<tr><td>Wind Speed, <math><mfrac><mi>m</mi><mi>s</mi></mfrac></math></td><td>${v.wind_speed}</td></tr>`)
-        r.push(html`<tr><td>Wind, °</td><td>${v.wind_from_direction}</td></tr>`)
-        r.push(html`<tr><td>Clouds, %</td><td>${v.cloud_area_fraction}</td></tr>`)
-        r.push(html`<tr><td>Sea Level Air Pressure, hPa</td><td>${v.air_pressure_at_sea_level}</td></tr>`)
+        let d = v.details
+        r.push(html`<tr><td>T, °C</td><td>${d.air_temperature}</td></tr>`)
+        r.push(html`<tr><td>Humidity, %</td><td>${d.relative_humidity}</td></tr>`)
+        r.push(html`<tr><td>Wind Speed, <math><mfrac><mi>m</mi><mi>s</mi></mfrac></math></td><td>${d.wind_speed}</td></tr>`)
+        r.push(html`<tr><td>Wind, °</td><td>${d.wind_from_direction}</td></tr>`)
+        r.push(html`<tr><td>Clouds, %</td><td>${d.cloud_area_fraction}</td></tr>`)
+        r.push(html`<tr><td>Sea Level Air Pressure, hPa</td><td>${d.air_pressure_at_sea_level}</td></tr>`)
+        r.push(html`<tr><td>Coordinates, lat·lon</td><td><a target="_blank" href="https://www.openstreetmap.org/?mlat=${v.co.lat}&mlon=${v.co.lon}">${v.co.lat},${v.co.lon}</a></td></tr>`)
         r.push('</table>')
         result.innerHTML = r.join`\n`
 
