@@ -13,9 +13,17 @@ function debounce(fn, ms = 0) {
     }
 }
 
+function html(strings, ...values) {
+    values = values.map( v => {
+        let m = {'&':'amp', '<':'lt', '>':'gt', '"':'quot', "'":'apos'}
+        return String(v).replace(/[&<>"']/g, k => `&${m[k]};`)
+    })
+    return strings.map( (v, idx) => [v, values[idx]]).flat().join``
+}
+
 async function completion(query) {
     return (await fetch_json('/api?city='+query)).map( v => {
-        return `<option value="${v}">` // FIXME
+        return html`<option value="${v}">`
     }).join`\n`
 }
 
@@ -51,14 +59,14 @@ city.addEventListener("change", function() {
     result.innerText = "Loading..."
     this.disabled = true
     fetch_json('/api?l='+this.value).then( v => {
-        let r = [`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
+        let r = [html`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
         v = v.details
-        r.push(`<tr><td>T, °C</td><td>${v.air_temperature}</td></tr>`)
-        r.push(`<tr><td>Humidity, %</td><td>${v.relative_humidity}</td></tr>`)
-        r.push(`<tr><td>Wind Speed, <math><mfrac><mi>m</mi><mi>s</mi></mfrac></math></td><td>${v.wind_speed}</td></tr>`)
-        r.push(`<tr><td>Wind, °</td><td>${v.wind_from_direction}</td></tr>`)
-        r.push(`<tr><td>Clouds, %</td><td>${v.cloud_area_fraction}</td></tr>`)
-        r.push(`<tr><td>Sea Level Air Pressure, hPa</td><td>${v.air_pressure_at_sea_level}</td></tr>`)
+        r.push(html`<tr><td>T, °C</td><td>${v.air_temperature}</td></tr>`)
+        r.push(html`<tr><td>Humidity, %</td><td>${v.relative_humidity}</td></tr>`)
+        r.push(html`<tr><td>Wind Speed, <math><mfrac><mi>m</mi><mi>s</mi></mfrac></math></td><td>${v.wind_speed}</td></tr>`)
+        r.push(html`<tr><td>Wind, °</td><td>${v.wind_from_direction}</td></tr>`)
+        r.push(html`<tr><td>Clouds, %</td><td>${v.cloud_area_fraction}</td></tr>`)
+        r.push(html`<tr><td>Sea Level Air Pressure, hPa</td><td>${v.air_pressure_at_sea_level}</td></tr>`)
         r.push('</table>')
         result.innerHTML = r.join`\n`
 
