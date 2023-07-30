@@ -36,21 +36,16 @@ let city = document.querySelector("#form input")
 let datalist = document.querySelector("#form datalist")
 let result = document.querySelector("#result")
 
-city.addEventListener("input", debounce(async function(evt) {
+city.addEventListener("input", debounce(function(evt) {
     log(evt.inputType)
     if (evt.inputType === "insertReplacementText") { // firefox
         this.dispatchEvent(new Event('change'))
         datalist.innerHTML = ''
-        return
     } else if (!evt.inputType?.match(/^(insertText|delete|insertFromPaste)/)) {
         datalist.innerHTML = ''
-        return
-    }
-
-    try {
-        datalist.innerHTML = await completion(this.value)
-    } catch (e) {
-        err(this, e)
+    } else {
+        completion(this.value).then( v => datalist.innerHTML = v)
+            .catch(e => err(this, e))
     }
 }, 250))
 
@@ -63,11 +58,11 @@ city.addEventListener("change", function() {
     result.innerText = "Loading..."
     this.disabled = true
     weather(this.value).then( v => {
-        let r = [`<table><tr><td>Latest Update</td><td>${v.time}<td></tr>`]
+        let r = [`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
         v = v.details
         r.push(`<tr><td>T, °C</td><td>${v.air_temperature}</td></tr>`)
         r.push(`<tr><td>Humidity, %</td><td>${v.relative_humidity}</td></tr>`)
-        r.push(`<tr><td>Wind Speed, m/s</td><td>${v.wind_speed}</td></tr>`)
+        r.push(`<tr><td>Wind Speed, <math><mfrac><mi>m</mi><mi>s</mi></mfrac></math></td><td>${v.wind_speed}</td></tr>`)
         r.push(`<tr><td>Wind, °</td><td>${v.wind_from_direction}</td></tr>`)
         r.push(`<tr><td>Clouds, %</td><td>${v.cloud_area_fraction}</td></tr>`)
         r.push(`<tr><td>Sea Level Air Pressure, hPa</td><td>${v.air_pressure_at_sea_level}</td></tr>`)
@@ -79,7 +74,10 @@ city.addEventListener("change", function() {
         history.replaceState({}, '', '?'+params.toString())
     }).catch(e => {
         err(this, e)
-    }).finally( () => this.disabled = false)
+    }).finally( () => {
+        this.disabled = false
+        this.focus()
+    })
 })
 
 city.addEventListener("my-error", function(evt) {
