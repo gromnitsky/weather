@@ -1,7 +1,7 @@
 import http from 'http'
 import fs from 'fs'
 import path from 'path'
-import locations from './locations/Locations.js'
+import locations from './locations/locations.js'
 
 function cities(res, q) {
     let r = []
