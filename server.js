@@ -69,7 +69,7 @@ function serve_static(res, file) {
     if (/^\/+$/.test(file)) file = "index.html"
     let name = path.join(public_root, path.normalize(file))
     fs.stat(name, (err, stats) => {
-        if (err) {
+        if (err || !stats.isFile()) {
             res.statusCode = 404
             return res.end()
         }
