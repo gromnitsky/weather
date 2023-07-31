@@ -22,7 +22,7 @@ function html(strings, ...values) {
 }
 
 async function completion(query) {
-    return (await fetch_json('/api?city='+query)).map( v => {
+    return (await fetch_json('api?city='+query)).map( v => {
         return html`<option value="${v}">`
     }).join`\n`
 }
@@ -58,7 +58,7 @@ city.addEventListener("change", function() {
 
     result.innerText = "Loading..."
     this.disabled = true
-    fetch_json('/api?l='+this.value).then( v => {
+    fetch_json('api?l='+this.value).then( v => {
         let r = [html`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
         let d = v.details
         r.push(html`<tr><td>T, °C</td><td>${d.air_temperature}</td></tr>`)
