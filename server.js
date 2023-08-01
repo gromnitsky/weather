@@ -29,7 +29,7 @@ function find(q, limit, callback) {
 
 function cities(res, query) {
     let r = find(query, 10, (v, q) => {
-        return v[7]?.toLowerCase()?.includes(q) ? v[7] : null
+        return v[0]?.toLowerCase()?.includes(q) ? v[0] : null
     })
 
     res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
@@ -38,7 +38,7 @@ function cities(res, query) {
 
 function weather(res, query) {
     let co = find(query, 1, (v, q) => {
-        return v[7]?.toLowerCase() === q ? {lat: v[5], lon:v[6]} : null
+        return v[0]?.toLowerCase() === q ? {lat: v[1], lon:v[2]} : null
     })[0]
     if (!co) return err(res, 'invalid location')
 

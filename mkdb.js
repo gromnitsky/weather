@@ -14,16 +14,11 @@ let stat = cities.reduce( (acc, cur) => {
 
 cities.filter( v => v.country_code !== 'RU').forEach( v => {
     console.log([
-        flags[v.country_code],
-        stat[v.name],
-        v.name,
-        v.state_name,
-        v.country_name,
-        co(v.latitude),
-        co(v.longitude),
         [
             `${flags[v.country_code]} ${v.name}`,
             stat[v.name] > 1 ? `${v.state_name}; ${v.country_name}` : v.country_name,
-        ].join`; `
+        ].join`; `,
+        co(v.latitude),
+        co(v.longitude),
     ].join`|`)
 })
