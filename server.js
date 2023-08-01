@@ -1,20 +1,45 @@
 import http from 'http'
 import fs from 'fs'
 import path from 'path'
-import locations from './locations/locations.js'
 
-function cities(res, q) {
+function find(q, limit, callback) {
     let r = []
-    q = (q || '').trim().toLowerCase(); if (q) {
-        r = locations.filter( v => v[0].toLowerCase().includes(q))
-            .slice(0, 10).map( v => v[0])
-        res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
+    q = (q || '').trim().toLowerCase(); if (!q) return r
+
+    let buf = Buffer.alloc(1024*50)
+    let pos = 0
+    while (fs.readSync(lfd, buf, 0, buf.length, pos)) {
+        let ln = buf.lastIndexOf(10)
+        ln > 0 ? pos += ln+1 : pos = -1
+
+        let lines = buf.slice(0, ln).toString().split("\n")
+        for (let line of lines) {
+            let match = callback(line.split("|"), q)
+            if (match) {
+                r.push(match)
+                limit--
+            }
+            if (!limit) break
+        }
+        if (!limit) break
     }
+
+    return r
+}
+
+function cities(res, query) {
+    let r = find(query, 10, (v, q) => {
+        return v[7]?.toLowerCase()?.includes(q) ? v[7] : null
+    })
+
+    res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
     res.end(JSON.stringify(r))
 }
 
-function weather(res, location) {
-    let co = locations.find( v => v[0] === location)?.[1]
+function weather(res, query) {
+    let co = find(query, 1, (v, q) => {
+        return v[7]?.toLowerCase() === q ? {lat: v[5], lon:v[6]} : null
+    })[0]
     if (!co) return err(res, 'invalid location')
 
     fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( async v => {
@@ -52,6 +77,9 @@ let server = http.createServer( (req, res) => {
         serve_static(res, url.pathname)
 })
 
+let public_root = fs.realpathSync(process.argv[2])
+let lfd = fs.openSync(public_root + '/../locations.txt')
+
 if (import.meta.url.endsWith(process.argv[1]))
     server.listen(process.env.PORT || 8080)
 
@@ -62,8 +90,6 @@ function err(res, msg, code = 400) {
 }
 
 function usage(res) { err(res, 'Usage: /api?city=query /api?l=location') }
-
-let public_root = fs.realpathSync(path.dirname(process.argv[1]))
 
 function serve_static(res, file) {
     if (/^\/+$/.test(file)) file = "index.html"

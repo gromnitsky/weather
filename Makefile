@@ -1,9 +1,24 @@
-l := locations
-$(l)/locations.js: $(l)/cities.json $(l)/flags.json
-	$(l)/mkdb.js $^ > $@
-$(l)/cities.json:; curl -fL https://github.com/dr5hn/countries-states-cities-database/raw/master/cities.json > $@
+out := _out
+web := $(out)/web
+static := $(addprefix $(web)/, web.js index.html)
 
-server: kill $(l)/locations.js; node "`pwd`/server.js" &
-kill:; -pkill -f "node `pwd`/server.js"
+all: $(out)/locations.txt $(static)
+
+$(web)/%: %
+	$(mkdir)
+	cp $< $@
+
+$(out)/locations.txt: $(out)/cities.json flags.json
+	$(mkdir)
+	./mkdb.js $^ > $@
+
+$(out)/cities.json:
+	$(mkdir)
+	curl -fL https://github.com/dr5hn/countries-states-cities-database/raw/master/cities.json > $@
+
+cmd := "`pwd`/server.js" $(web)
+server: all kill; node $(cmd) &
+kill:; -pkill -f "node $(cmd)"
 
 .DELETE_ON_ERROR:
+mkdir = @mkdir -p $(dir $@)
