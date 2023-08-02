@@ -12,7 +12,7 @@ let stat = cities.reduce( (acc, cur) => {
     return acc
 }, {})
 
-cities.filter( v => v.country_code !== 'RU').forEach( v => {
+cities.filter( v => !(v.country_code === 'RU' || v.country_code === 'BY')).forEach( v => {
     console.log([
         [
             `${flags[v.country_code]} ${v.name}`,
