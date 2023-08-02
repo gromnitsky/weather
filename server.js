@@ -59,7 +59,7 @@ function weather(res, query) {
 let server = http.createServer( (req, res) => {
     let url; try {
         url = new URL(req.url, `http://${req.headers.host}`)
-    } catch (_) {
+    } catch {
         return usage(res)
     }
 
