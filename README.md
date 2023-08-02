@@ -6,7 +6,8 @@ For the description of how it works, see this
 If you want to run it yourself:
 
 ~~~
-$ make # generate location data
+$ sudo dnf install icu  # contains uconv(1)
+$ make                  # generate location data
 $ PORT=1234 node server.js _out/web
 ~~~
 

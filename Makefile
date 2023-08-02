@@ -10,7 +10,7 @@ $(web)/%: %
 
 $(out)/locations.txt: $(out)/cities.json flags.json
 	$(mkdir)
-	./mkdb.js $^ > $@
+	sed "s/”/'/g" $< | uconv -f utf-8 -t utf-8 -x latin-ascii | ./mkdb.js > $@
 
 $(out)/cities.json:
 	$(mkdir)

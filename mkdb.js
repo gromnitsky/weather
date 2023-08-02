@@ -2,8 +2,8 @@
 
 import fs from 'fs'
 
-let cities = JSON.parse(fs.readFileSync(process.argv[2]))
-let flags = JSON.parse(fs.readFileSync(process.argv[3]))
+let flags = JSON.parse(fs.readFileSync(new URL('flags.json', import.meta.url)))
+let cities = JSON.parse(fs.readFileSync('/dev/stdin'))
 
 function co(f) { return parseFloat(f).toFixed(4) }
 
