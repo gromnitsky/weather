@@ -10,11 +10,12 @@ function find(q, limit, callback) {
     let pos = 0
     while (fs.readSync(lfd, buf, 0, buf.length, pos)) {
         let ln = buf.lastIndexOf(10)
-        ln > 0 ? pos += ln+1 : pos = -1
+        if (ln < 0) throw new Error("better not happen")
+        pos += ln+1
 
         let lines = buf.subarray(0, ln).toString().split("\n")
         for (let line of lines) {
-            let match = callback(line.split("|"), q)
+            let match = callback(line, q)
             if (match) {
                 r.push(match)
                 limit--
@@ -29,7 +30,8 @@ function find(q, limit, callback) {
 
 function cities(res, query) {
     let r = find(query, 10, (v, q) => {
-        return v[0]?.toLowerCase()?.includes(q) ? v[0] : null
+        v = v.slice(0, v.indexOf('|')) // faster then v.split("|")[0]
+        return v.toLowerCase().includes(q) ? v : null
     })
 
     res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
@@ -38,7 +40,10 @@ function cities(res, query) {
 
 function weather(res, query) {
     let co = find(query, 1, (v, q) => {
-        return v[0]?.toLowerCase() === q ? {lat: v[1], lon:v[2]} : null
+        if (v.slice(0, v.indexOf('|')).toLowerCase() === q) {
+            v = v.split("|")
+            return {lat: v[1], lon:v[2]}
+        }
     })[0]
     if (!co) return err(res, 'invalid location')
 
