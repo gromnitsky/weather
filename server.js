@@ -12,7 +12,7 @@ function find(q, limit, callback) {
         let ln = buf.lastIndexOf(10)
         ln > 0 ? pos += ln+1 : pos = -1
 
-        let lines = buf.slice(0, ln).toString().split("\n")
+        let lines = buf.subarray(0, ln).toString().split("\n")
         for (let line of lines) {
             let match = callback(line.split("|"), q)
             if (match) {
