@@ -3,32 +3,28 @@ import fs from 'fs'
 import path from 'path'
 import Database from 'better-sqlite3';
 
-function cities(res, query) {
-    let r = []
-    if (query.trim()) {
-        let st = db.prepare('SELECT pretty,country FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT 10')
-        try {
-            r = st.all(query)
-        } catch (e) {
-            return err(res, e)
-        }
-    }
+function query_run(res, query, columns, limit) {
+    if (!query.trim()) return []
 
+    let st = db.prepare(`SELECT ${columns} FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT ${limit}`)
+    try {
+        return st.all(query)
+    } catch (e) {
+        err(res, e)
+    }
+}
+
+function cities(res, query) {
+    let r = query_run(res, query, "pretty,country", 10)
+    if (!r) return // report sqlite error
     res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
     res.end(JSON.stringify(r))
 }
 
 function weather(res, query) {
-    let co
-    if (query.trim()) {
-        let st = db.prepare('SELECT pretty,country,lat,lon FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT 1')
-        try {
-            co = st.all(query)[0]
-        } catch (e) {
-            return err(res, e)
-        }
-    }
-    if (!co) return err(res, 'invalid location')
+    let co = query_run(res, query, "pretty,country,lat,lon", 1)
+    if (!co) return
+    if ( !(co = co[0])) return err(res, 'invalid location')
 
     fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( async v => {
         if (!v.ok) throw new Error(v.statusText)
