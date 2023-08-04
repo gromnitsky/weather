@@ -23,7 +23,7 @@ function html(strings, ...values) {
 
 async function completion(query) {
     return (await fetch_json('api?city='+query)).map( v => {
-        return html`<option value="${v}">`
+        return html`<option value="${flags[v.country]} ${v.pretty}">`
     }).join`\n`
 }
 
@@ -31,6 +31,12 @@ function err(ctx, error) {
     let event = new Event('my-error')
     event.error = error
     ctx.dispatchEvent(event)
+}
+
+function query_prepare(s) {     // for sqlite fts5
+    let flag = s => /^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]$/.test(s)
+    if (flag(s.slice(0, 4))) s = s.slice(4)
+    return s.includes(';') ? s.split(';').filter(Boolean).map(v => `"${v.trim()}"`).join` ` : s
 }
 
 let city = document.querySelector("#form input")
@@ -45,7 +51,7 @@ city.addEventListener("input", debounce(function(evt) {
     } else if (!evt.inputType?.match(/^(insertText|delete|insertFromPaste)/)) {
         datalist.innerHTML = ''
     } else {
-        completion(this.value).then( v => datalist.innerHTML = v)
+        completion(query_prepare(this.value)).then( v => datalist.innerHTML = v)
             .catch(e => err(this, e))
     }
 }, 250))
@@ -58,7 +64,7 @@ city.addEventListener("change", function() {
 
     result.innerText = "Loading..."
     this.disabled = true
-    fetch_json('api?l='+this.value).then( v => {
+    fetch_json('api?l='+query_prepare(this.value)).then( v => {
         let r = [html`<table><tr><td>Latest Update</td><td>${new Date(v.time).toLocaleString('en-CA')}<td></tr>`]
         let d = v.details
         r.push(html`<tr><td>T, °C</td><td>${d.air_temperature}</td></tr>`)
@@ -68,6 +74,7 @@ city.addEventListener("change", function() {
         r.push(html`<tr><td>Clouds, %</td><td>${d.cloud_area_fraction}</td></tr>`)
         r.push(html`<tr><td>Sea Level Air Pressure, hPa</td><td>${d.air_pressure_at_sea_level}</td></tr>`)
         r.push(html`<tr><td>Coordinates, lat·lon</td><td><a target="_blank" href="https://www.openstreetmap.org/?mlat=${v.co.lat}&mlon=${v.co.lon}">${v.co.lat},${v.co.lon}</a></td></tr>`)
+        r.push(html`<tr><td>Matched</td><td>${flags[v.co.country]} ${v.co.pretty}</a></td></tr>`)
         r.push('</table>')
         result.innerHTML = r.join`\n`
 
@@ -87,6 +94,7 @@ city.addEventListener("my-error", function(evt) {
     console.error(evt.error)
 })
 
+let flags = await fetch_json('./flags.json')
 let params = (new URL(location.href)).searchParams
 let log = params.get('debug') ? console.log : () => {}
 let l = params.get('l')?.trim()

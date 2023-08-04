@@ -6,8 +6,9 @@ For the description of how it works, see this
 If you want to run it yourself:
 
 ~~~
-$ sudo dnf install icu  # contains uconv(1)
+$ sudo dnf install icu  # icu-devtools in Debian
 $ make                  # generate location data
+$ npm i
 $ PORT=1234 node server.js _out/web
 ~~~
 

@@ -1,50 +1,33 @@
 import http from 'http'
 import fs from 'fs'
 import path from 'path'
-
-function find(q, limit, callback) {
-    let r = []
-    q = (q || '').trim().toLowerCase(); if (!q) return r
-
-    let buf = Buffer.alloc(1024*50)
-    let pos = 0
-    while (fs.readSync(lfd, buf, 0, buf.length, pos)) {
-        let ln = buf.lastIndexOf(10)
-        if (ln < 0) throw new Error("better not happen")
-        pos += ln+1
-
-        let lines = buf.subarray(0, ln).toString().split("\n")
-        for (let line of lines) {
-            let match = callback(line, q)
-            if (match) {
-                r.push(match)
-                limit--
-            }
-            if (!limit) break
-        }
-        if (!limit) break
-    }
-
-    return r
-}
+import Database from 'better-sqlite3';
 
 function cities(res, query) {
-    let r = find(query, 10, (v, q) => {
-        v = v.slice(0, v.indexOf('|')) // faster then v.split("|")[0]
-        return v.toLowerCase().includes(q) ? v : null
-    })
+    let r = []
+    if (query.trim()) {
+        let st = db.prepare('SELECT pretty,country FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT 10')
+        try {
+            r = st.all(query)
+        } catch (e) {
+            return err(res, e)
+        }
+    }
 
     res.setHeader("Expires", new Date(Date.now() + 300*1000).toUTCString())
     res.end(JSON.stringify(r))
 }
 
 function weather(res, query) {
-    let co = find(query, 1, (v, q) => {
-        if (v.slice(0, v.indexOf('|')).toLowerCase() === q) {
-            v = v.split("|")
-            return {lat: v[1], lon:v[2]}
+    let co
+    if (query.trim()) {
+        let st = db.prepare('SELECT pretty,country,lat,lon FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT 1')
+        try {
+            co = st.all(query)[0]
+        } catch (e) {
+            return err(res, e)
         }
-    })[0]
+    }
     if (!co) return err(res, 'invalid location')
 
     fetch(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${co.lat}&lon=${co.lon}`).then( async v => {
@@ -83,7 +66,8 @@ let server = http.createServer( (req, res) => {
 })
 
 let public_root = fs.realpathSync(process.argv[2])
-let lfd = fs.openSync(public_root + '/../locations.txt')
+let db = new Database(public_root + '/../locations.sqlite3')
+db.pragma('journal_mode = WAL')
 
 if (import.meta.url.endsWith(process.argv[1]))
     server.listen(process.env.PORT || 8080)

@@ -1,6 +1,6 @@
 out := _out
 web := $(out)/web
-static := $(addprefix $(web)/, web.js index.html)
+static := $(addprefix $(web)/, web.js flags.json index.html)
 
 all: $(out)/locations.txt $(static)
 
@@ -8,7 +8,7 @@ $(web)/%: %
 	$(mkdir)
 	cp $< $@
 
-$(out)/locations.txt: $(out)/cities.json flags.json
+$(out)/locations.txt: $(out)/cities.json
 	$(mkdir)
 	sed "s/”/'/g" $< | uconv -f utf-8 -t utf-8 -x latin-ascii | ./mkdb.js > $@
 
