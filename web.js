@@ -36,7 +36,7 @@ function err(ctx, error) {
 function query_prepare(s) {     // for sqlite fts5
     let flag = s => /^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]$/.test(s)
     if (flag(s.slice(0, 4))) s = s.slice(4)
-    return s.includes(';') ? s.split(';').filter(Boolean).map(v => `"${v.trim()}"`).join` ` : s
+    return s.includes(';') ? s.split(';').map( v => v.trim()).filter(Boolean).map(v => `"${v}"`).join` ` : s
 }
 
 let city = document.querySelector("#form input")

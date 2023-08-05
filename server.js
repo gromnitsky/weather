@@ -5,10 +5,8 @@ import Database from 'better-sqlite3';
 
 function query_run(res, query, columns, limit) {
     if (!query.trim()) return []
-
-    let st = db.prepare(`SELECT ${columns} FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT ${limit}`)
     try {
-        return st.all(query)
+        return db.prepare(`SELECT ${columns} FROM locations WHERE pretty MATCH ? ORDER BY rank LIMIT ${limit}`).all(query)
     } catch (e) {
         err(res, e)
     }

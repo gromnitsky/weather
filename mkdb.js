@@ -20,3 +20,5 @@ let st = db.prepare('INSERT INTO locations(pretty, country, lat, lon) VALUES(?,?
 cities.filter( v => !(v.country_code === 'RU' || v.country_code === 'BY')).forEach( v => {
     st.run([v.name, stat[v.name]>1 ? `${v.state_name}; ${v.country_name}` : v.country_name].join`; `, v.country_code, co(v.latitude), co(v.longitude))
 })
+
+db.close()
