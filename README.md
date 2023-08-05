@@ -7,8 +7,8 @@ If you want to run it yourself:
 
 ~~~
 $ sudo dnf install icu  # icu-devtools in Debian
-$ make                  # generate location data
 $ npm i
+$ make                  # generate location data
 $ PORT=1234 node server.js _out/web
 ~~~
 
